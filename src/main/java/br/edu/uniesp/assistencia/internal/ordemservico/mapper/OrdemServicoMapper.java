@@ -12,11 +12,9 @@ public final class OrdemServicoMapper {
     }
 
     public static OrdemServicoEntity paraEntidade(CriarOrdemServicoRequest request,
-                                                  String numeroProtocolo,
                                                   ClienteEntity cliente,
                                                   EquipamentoEntity equipamento) {
         return new OrdemServicoEntity(
-                numeroProtocolo,
                 cliente,
                 equipamento,
                 request.descricaoProblema()

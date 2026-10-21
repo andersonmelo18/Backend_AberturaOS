@@ -12,6 +12,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -71,17 +72,29 @@ public class OrdemServicoEntity {
     @OneToMany(mappedBy = "ordemServico", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AnexoEntity> anexos = new ArrayList<>();
 
-    public OrdemServicoEntity(String numeroProtocolo, ClienteEntity cliente, EquipamentoEntity equipamento, String descricaoProblema) {
+    public OrdemServicoEntity(ClienteEntity cliente, EquipamentoEntity equipamento, String descricaoProblema) {
         if (!cliente.isAtivo()) {
             throw new RegraNegocioException("Não é permitido abrir Ordem de Serviço para um cliente inativo.");
         }
-        this.numeroProtocolo = numeroProtocolo;
+        if (equipamento.getCliente() == null || cliente.getId() == null
+                || !cliente.getId().equals(equipamento.getCliente().getId())) {
+            throw new RegraNegocioException("O equipamento informado não pertence ao cliente indicado.");
+        }
         this.cliente = cliente;
         this.equipamento = equipamento;
         this.descricaoProblema = descricaoProblema;
         this.status = StatusOrdemServico.RECEBIDA;
         this.dataAbertura = LocalDateTime.now();
         adicionarHistorico(null, StatusOrdemServico.RECEBIDA, "SISTEMA", "Abertura da ordem de serviço.");
+    }
+
+    public void definirProtocolo(String numeroProtocolo) {
+        String prefixo = "OS-" + dataAbertura.toLocalDate().format(DateTimeFormatter.BASIC_ISO_DATE) + "-";
+        if (this.numeroProtocolo != null || numeroProtocolo == null
+                || !numeroProtocolo.matches(prefixo + "[0-9A-F]{4}")) {
+            throw new RegraNegocioException("Protocolo inválido ou já definido.");
+        }
+        this.numeroProtocolo = numeroProtocolo;
     }
 
     public void atribuirTecnico(TecnicoEntity tecnico, String responsavel) {
